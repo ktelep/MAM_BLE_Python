@@ -1,6 +1,4 @@
-# Project Title
-
-MAM_BLE_Python
+# MAM_BLE_Python
 
 ## Description
 
