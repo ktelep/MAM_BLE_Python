@@ -19,16 +19,14 @@ async def MAM_terminal():
     h.setLevel(logging.DEBUG)
     log.addHandler(h)
 
-    def match_mam_uuid(device: BLEDevice, adv:AdvertisementData):
-        print(adv.service_uuids)
-        if MAM_SERV_UUID.lower() in adv.service_uuids:
+    def match_mam_name(device: BLEDevice, adv:AdvertisementData):
+        if MAM_NAME in device.name:
             return True
+   
+    log.info('Searching for Ball')
+    device = await BleakScanner.find_device_by_filter(match_mam_name)
 
-    #device = await BleakScanner.find_device_by_filter(match_mam_uuid)
-    #print(device)
-
-    #async with BleakClient(device) as client:
-    async with BleakClient('00:00:00:00:42:5b') as client:
+    async with BleakClient(device) as client:
         log.info(f"Connected: {client.is_connected}")
         paired = await client.pair(protection_level=1)
         log.info(f"Paired: {paired}")
