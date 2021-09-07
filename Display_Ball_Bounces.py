@@ -15,6 +15,7 @@ MAM_WRITE_UUID   = "0000fff5-0000-1000-8000-00805f9b34fb"
 
 def notification_handler(sender, dat):
     log = logging.getLogger(__name__)
+    log.debug(dat)
     devid = (dat[1] << 16) + (dat[2] << 8) + dat[3]
     count = (dat[4] << 16) + (dat[5] << 8) + dat[6]
     log.info(f'Ball ID: {devid} - Count: {count}')
@@ -26,25 +27,29 @@ async def MAM_terminal():
     h.setLevel(logging.DEBUG)
     log.addHandler(h)
 
-    def match_mam_uuid(device: BLEDevice, adv:AdvertisementData):
-        print(adv.service_uuids)
-        if MAM_SERV_UUID.lower() in adv.service_uuids:
+    def match_mam_name(device: BLEDevice, adv:AdvertisementData):
+        if MAM_NAME in device.name:
             return True
+   
+    log.info('Searching for Ball')
+    device = await BleakScanner.find_device_by_filter(match_mam_name)
+    if device:
+        log.info('Found Ball')
+    else:
+        log.info('Unable to find ball, try bouncing it and rerunning')
+        sys.exit()
 
-    #device = await BleakScanner.find_device_by_filter(match_mam_uuid)
-    #print(device)
-
-    #async with BleakClient(device) as client:
-    async with BleakClient('00:00:00:00:42:5b') as client:
-        log.info(f"Connected: {client.is_connected}")
+    async with BleakClient(device) as client:
+        log.info(f"Connected to Ball: {client.is_connected}")
         paired = await client.pair(protection_level=1)
-        log.info(f"Paired: {paired}")
+        log.info(f"Paired with Ball: {paired}")
 
     #  Get Bounces
         await client.write_gatt_char(MAM_WRITE_UUID,
                             bytearray([0x56,0x0]))
         
     #  Setup Notifier
+
         log.info("Bounce the ball a few times to get count")
         await client.start_notify(MAM_NOTIFY_UUID, notification_handler)
         await asyncio.sleep(5.0)
